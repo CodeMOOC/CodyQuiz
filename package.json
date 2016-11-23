@@ -1,0 +1,15 @@
+{
+  "name": "cody-roby-quiz",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lorenz Cuno Klopfenstein <lck@klopfenstein.net>",
+  "license": "MIT",
+  "dependencies": {
+    "botbuilder": "^3.4.4",
+    "restify": "^4.3.0"
+  }
+}
