@@ -1,0 +1,11 @@
+{
+    "welcome":
+        "Benvenuto! Sono CodyQuiz, un bot che ti permette di esercitarti con dei quiz di coding. Pronto a giocare?",
+    "help":
+        "Questo è l'aiuto.",
+
+    "affirmation":
+        ["si", "certo", "ok", "subito", "volentieri", "come no"],
+    "denial":
+        ["no", "mai", "non ora", "no grazie"]
+}

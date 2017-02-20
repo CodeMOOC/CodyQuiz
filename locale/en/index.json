@@ -1,0 +1,11 @@
+{
+    "welcome":
+        "Welcome! I am CodyRoby etc. etc.",
+    "help":
+        "Help is here.",
+
+    "affirmation":
+        ["yes", "yep", "sure", "ok", "okay", "yea", "yeah"],
+    "denial":
+        ["no", "nope", "never", "not", "no thanks"]
+}

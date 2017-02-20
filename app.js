@@ -2,6 +2,8 @@ var config = require('./config.js');
 var restify = require('restify');
 var builder = require('botbuilder');
 
+require('./utility.js')();
+
 //=========================================================
 // Bot Setup
 //=========================================================
@@ -26,36 +28,67 @@ server.post('/api/messages', connector.listen());
 
 bot.dialog('/', [
     function (session, args, next) {
-        if(!session.privateConversationData.type) {
-            session.beginDialog('/type');
-        }
-        else {
-            next();
-        }
-    },
-    function(session) {
-        session.send('This is default response. You are %s.', session.privateConversationData.type);
+        session.beginDialog('/quiz');
     }
 ]);
 
-bot.dialog('/type', [
+bot.dialog('/quiz', [
     function (session) {
-        builder.Prompts.choice(session, 'What are you?', [
-            'Human',
-            'Robot',
-            'Something else'
-        ]);
+        var card = new builder.HeroCard(session)
+            .title("The question")
+            .text("Text of the question here.")
+            .images([
+                builder.CardImage.create(session, 'http://botify.it/treasurehuntbot/riddles/0.png')
+            ]);
+
+
+        var msg = new builder.Message(session)
+            .attachments([card]);
+        session.send(msg);
+
+        var answers = [
+            '7',
+            '9',
+            '11'
+        ];
+
+        builder.Prompts.choice(session, 'How many thingies?', answers, {
+            maxRetries: 0
+        });
     },
     function(session, result) {
-        if(result.response) {
-            console.log('You chose: %s (probability %d)', result.response.entity, result.response.score);
-
-            session.privateConversationData.type = result.response.entity;
+        if(result.response && result.response.entity == '7') {
+            session.send('Correct!');
         }
         else {
-            console.log('You chose nothing.');
+            session.send('Sorry, 7 was the correct answer.');
         }
 
-        session.endDialog('Ok then.');
+        builder.Prompts.text(session, 'Another one?');
+    },
+    function(session, result) {
+        var affirmations = session.localizer.getEntry(session.preferredLocale(), "affirmation");
+
+        var normalizedResponse = result.response.toString().normalizeResponse();
+        console.log("Response %s, normalized %s", result.response, normalizedResponse);
+
+        if(affirmations.includes(normalizedResponse)) {
+            session.replaceDialog('/quiz');
+        }
+        else {
+            session.endDialog('Ok then.');
+        }
     }
 ]);
+
+bot.dialog('/help', [
+    function(session) {
+        session.endDialog('help');
+    }
+]);
+bot.beginDialogAction('help', '/help', { matches: [
+    /aiuto/i,
+    /^come/i,
+    /help/i,
+    /^how/i
+] });
