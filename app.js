@@ -1,12 +1,12 @@
 var config = require('./config.js');
-var restify = require('restify');
-var builder = require('botbuilder');
-
 require('./utility.js')();
 
 //=========================================================
 // Bot Setup
 //=========================================================
+
+var restify = require('restify');
+var builder = require('botbuilder');
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -40,7 +40,6 @@ bot.dialog('/quiz', [
             .images([
                 builder.CardImage.create(session, 'http://botify.it/treasurehuntbot/riddles/0.png')
             ]);
-
 
         var msg = new builder.Message(session)
             .attachments([card]);
