@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "botbuilder": "^3.6.0",
+    "mysql": "^2.13.0",
     "restify": "^4.3.0"
   }
 }

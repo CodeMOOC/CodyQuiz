@@ -4,6 +4,14 @@
 //=========================================================
 
 module.exports = {
-    'microsoftAppId': '',
-    'microsoftAppPassword': ''
+    "microsoftAppId": "",
+    "microsoftAppPassword": "",
+
+    "certificatePath": "",
+    "keyPath": "",
+
+    "mysqlHost": "",
+    "mysqlUser": "",
+    "mysqlPassword": "",
+    "mysqlDatabase": ""
 };
