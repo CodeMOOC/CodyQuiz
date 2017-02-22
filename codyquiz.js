@@ -71,9 +71,10 @@ bot.use({
                 },
                 function(identity, callback) {
                     if(identity != null) {
-                        connection.query("UPDATE `identities` SET ?, `last_access_on` = NOW()", {
-                            "connector_address": JSON.stringify(session.message.address)
-                        }, function(err, result, field) {
+                        connection.query("UPDATE `identities` SET `connector_address` = ?, `last_access_on` = NOW() WHERE `id` = ?", [
+                            JSON.stringify(session.message.address),
+                            identity
+                        ], function(err, result, field) {
                             callback(err, identity);
                         });
                     }
