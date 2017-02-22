@@ -7,9 +7,6 @@ module.exports = {
     "microsoftAppId": "",
     "microsoftAppPassword": "",
 
-    "certificatePath": "",
-    "keyPath": "",
-
     "mysqlHost": "",
     "mysqlUser": "",
     "mysqlPassword": "",

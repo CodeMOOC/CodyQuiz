@@ -9,6 +9,7 @@
   "author": "Lorenz Cuno Klopfenstein <lck@klopfenstein.net>",
   "license": "MIT",
   "dependencies": {
+    "async": "^2.1.5",
     "botbuilder": "^3.6.0",
     "mysql": "^2.13.0",
     "restify": "^4.3.0"

@@ -2,6 +2,7 @@
 
 var config = require("./config.js");
 require("./utility.js")();
+var async = require("async");
 
 //=========================================================
 // Bot Setup
@@ -18,7 +19,6 @@ var server = restify.createServer({
 server.listen(process.env.port || process.env.PORT || 3978, function () {
    console.log("%s listening to %s", server.name, server.url);
 });
-server.on("connection", function() { console.log("New connection"); });
 
 // Create chat bot
 var connector = new builder.ChatConnector({
@@ -45,44 +45,61 @@ var dbpool = mysql.createPool({
 // Install middleware
 //=========================================================
 
-/*bot.use({
+bot.use({
     botbuilder: function(session, next) {
-        console.log("Update from %s", session.message.user.name);
+        console.log("Incoming message: %s", JSON.stringify(session.message));
 
         // Register and update user
         dbpool.getConnection(function(err, connection) {
-            connection.query("SELECT `id` FROM `identities` WHERE `connector_user_id` = ?",
-                session.message.user.id,
-            function(err, result, fields) {
+            if(err) throw err;
+
+            async.seq(
+                function(message, callback) {
+                    connection.query("SELECT `id` FROM `identities` WHERE `connector_source` = ? AND `connector_user_id` = ?", [
+                        session.message.source,
+                        session.message.user.id
+                    ], function(err, result, fields) {
+                        if(err) throw err;
+
+                        if(result.length >= 1) {
+                            callback(null, result[0].id);
+                        }
+                        else {
+                            callback(null, null);
+                        }
+                    });
+                },
+                function(identity, callback) {
+                    if(identity != null) {
+                        connection.query("UPDATE `identities` SET ?, `last_access_on` = NOW()", {
+                            "connector_address": JSON.stringify(session.message.address)
+                        }, function(err, result, field) {
+                            callback(err, identity);
+                        });
+                    }
+                    else {
+                        connection.query("INSERT INTO `identities` (`id`, `connector_source`, `connector_user_id`, `connector_address`, `first_seen_on`, `last_access_on`) VALUES(DEFAULT, ?, ?, ?, NOW(), NOW())", [
+                            session.message.source,
+                            session.message.user.id,
+                            JSON.stringify(session.message.address)
+                        ], function(err, result, field) {
+                            callback(err, result.insertId);
+                        });
+                    }
+                }
+            )(session.message, function(err, result) {
                 if(err) throw err;
-                if(result[0].id) {
-                    session.message.identity = result[0].id;
 
-                    connection.query("UPDATE `identities` SET ?", {
-                        "connector_address": JSON.stringify(session.message.address)
-                    }, function(err, result, field) {
-                        if(err) throw err;
-                    });
-                }
-                else {
-                    connection.query("INSERT INTO `identities` (`id`, `connector_user_id`, `connector_address`) VALUES(DEFAULT, ?, ?)", [
-                        session.message.user.id,
-                        JSON.stringify(session.message.address)
-                    ], function(err, result, field) {
-                        if(err) throw err;
-                        session.message.identity = result.insertId;
-                    });
-                }
+                session.identity = result;
+                console.log("User identity #%d", result);
+
+                connection.release();
+
+                next();
             });
-
-            console.log("User identity #%d", session.message.identity);
-
-            connection.release();
         });
-
-        next();
-    }
-});*/
+    } //end user identity middleware
+});
 
 //=========================================================
 // Bots Dialogs
