@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 22, 2017 at 02:56 PM
+-- Generation Time: Feb 22, 2017 at 06:45 PM
 -- Server version: 5.5.53-0+deb8u1
 -- PHP Version: 5.6.27-0+deb8u1
 
@@ -39,7 +39,8 @@ CREATE TABLE `quizzes` (
   `quiz_id` int(10) UNSIGNED NOT NULL,
   `answer_type` enum('general','number','confirm','choice') DEFAULT 'general',
   `image_path` varchar(128) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
-  `answer` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL
+  `answer` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `choice_json` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -96,8 +97,7 @@ ALTER TABLE `quiz_answers`
 -- Indexes for table `quiz_texts`
 --
 ALTER TABLE `quiz_texts`
-  ADD PRIMARY KEY (`quiz_id`),
-  ADD UNIQUE KEY `quiz_text_unique` (`quiz_id`,`locale`);
+  ADD PRIMARY KEY (`quiz_id`,`locale`) USING BTREE;
 
 --
 -- AUTO_INCREMENT for dumped tables

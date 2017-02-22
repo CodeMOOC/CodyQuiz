@@ -3,6 +3,23 @@
         "Welcome! I am CodyRoby etc. etc.",
     "help":
         "Help is here.",
+    "another_quiz":
+        ["Another quiz?", "Do you want to continue?", "Wanna try another quiz?", "Another one?", "Do you want to play again?", "I’m ready for another quiz. Are you? 😉"],
+    "done":
+        "Ok. Just tell me when you want to play again.",
+    "no_more_quizzes":
+        "Apparently I have no more quizzes to ask you! Come back later for more. 😉",
+    "answer_correct":
+        ["Yep, correct!", "That’s right!", "Correct.", "100% right.", "Right. Great!"],
+    "answer_wrong":
+        ["Nope, wrong answer!", "Nope!", "That’s wrong, I’m afraid.", "Wrong answer."],
+
+    "retryText":
+        "Send your answer as a simple text message.",
+    "retryNumber":
+        "Send your answer as a number.",
+    "retryConfirm":
+        "Just tell my yes or no.",
 
     "affirmation":
         ["yes", "yep", "sure", "ok", "okay", "yea", "yeah"],

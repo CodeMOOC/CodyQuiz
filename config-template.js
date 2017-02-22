@@ -10,5 +10,7 @@ module.exports = {
     "mysqlHost": "",
     "mysqlUser": "",
     "mysqlPassword": "",
-    "mysqlDatabase": ""
+    "mysqlDatabase": "",
+
+    "riddleImageBasePath": ""
 };

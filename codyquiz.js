@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var config = require("./config.js");
-require("./utility.js")();
+var utility = require("./utility.js");
 var async = require("async");
 
 //=========================================================
@@ -10,7 +10,6 @@ var async = require("async");
 
 var restify = require("restify");
 var builder = require("botbuilder");
-var fs = require('fs');
 
 // Setup Restify Server
 var server = restify.createServer({
@@ -48,6 +47,7 @@ var dbpool = mysql.createPool({
 bot.use({
     botbuilder: function(session, next) {
         console.log("Incoming message: %s", JSON.stringify(session.message));
+        console.log("Locale %s", session.preferredLocale());
 
         // Register and update user
         dbpool.getConnection(function(err, connection) {
@@ -59,7 +59,7 @@ bot.use({
                         session.message.source,
                         session.message.user.id
                     ], function(err, result, fields) {
-                        if(err) throw err;
+                        if(err) callback(err, null);
 
                         if(result.length >= 1) {
                             callback(null, result[0].id);
@@ -89,12 +89,12 @@ bot.use({
                     }
                 }
             )(session.message, function(err, result) {
+                connection.release();
+
                 if(err) throw err;
 
                 session.identity = result;
                 console.log("User identity #%d", result);
-
-                connection.release();
 
                 next();
             });
@@ -114,48 +114,123 @@ bot.dialog("/", [
 
 bot.dialog("/quiz", [
     function (session) {
-        var card = new builder.HeroCard(session)
-            .title("The question")
-            .text("Text of the question here.")
-            .images([
-                builder.CardImage.create(session, "http://botify.it/treasurehuntbot/riddles/0.png")
-            ]);
+        dbpool.getConnection(function(err, connection) {
+            if(err) throw err;
 
-        var msg = new builder.Message(session)
-            .attachments([card]);
-        session.send(msg);
+            async.seq(
+                function(connection, callback) {
+                    connection.query("SELECT q.`quiz_id`, q.`answer_type`, q.`image_path`, q.`answer`, q.`choice_json`, t.`text`, t.`locale`, IF(t.`locale` = ?, 2, IF(t.`locale` = ?, 1, 0)) AS `score` FROM `quizzes` AS q LEFT OUTER JOIN `quiz_texts` AS t ON q.`quiz_id` = t.`quiz_id` WHERE q.`quiz_id` NOT IN (SELECT `quiz_id` FROM `quiz_answers` WHERE `user_id` = ?) ORDER BY `score` DESC, RAND() LIMIT 1", [
+                        session.preferredLocale(),
+                        "en", // default locale
+                        session.identity
+                    ], function(err, result, fields) {
+                        if(err) callback(err, null);
+                        callback(null, result);
+                    });
+                },
+                function(result, callback) {
+                    if(result.length >= 1) {
+                        var quiz = result[0];
 
-        var answers = [
-            '7',
-            '9',
-            '11'
-        ];
+                        session.dialogData.currentQuizId = quiz.quiz_id;
+                        session.dialogData.currentQuizAnswer = quiz.answer;
+                        console.log("User #%d gets quiz #%d assigned (answer %s)", session.identity, quiz.quiz_id, quiz.answer);
+                        session.save();
 
-        builder.Prompts.choice(session, "How many thingies?", answers, {
-            maxRetries: 0
+                        if(quiz.image_path) {
+                            var msg = new builder.Message(session)
+                                .addAttachment(
+                                    new builder.HeroCard(session)
+                                        .images([
+                                            builder.CardImage.create(session, config.riddleImageBasePath + quiz.image_path)
+                                        ])
+                                );
+                            session.send(msg);
+
+                            /*session.send(new builder.Message(session).addAttachment({
+                                contentType: "image/png",
+                                contentUrl: config.riddleImageBasePath + quiz.image_path
+                            }));*/
+                        }
+
+                        switch(quiz.answer_type) {
+                            case "general":
+                            default:
+                                builder.Prompts.text(session, quiz.text, {
+                                    retryPrompt: "retryText"
+                                });
+                                break;
+
+                            case "number":
+                                builder.Prompts.number(session, quiz.text, {
+                                    retryPrompt: "retryNumber"
+                                });
+                                break;
+
+                            case "confirm":
+                                builder.Prompts.confirm(session, quiz.text, {
+                                    retryPrompt: "retryConfirm"
+                                });
+                                break;
+
+                            case "choice":
+                                builder.Prompts.choice(session, quiz.text, JSON.parse(quiz.choice_json), {
+                                    maxRetries: 0
+                                });
+                                break;
+                        }
+                    }
+                    else {
+                        session.send("no_more_quizzes");
+                    }
+
+                    callback(null, null);
+                }
+            )(connection, function(err, result) {
+                connection.release();
+                if(err) throw err;
+            });
         });
     },
     function(session, result) {
-        if(result.response && result.response.entity == "7") {
-            session.send("Correct!");
-        }
-        else {
-            session.send("Sorry, 7 was the correct answer.");
-        }
+        console.log("Raw user response: %s", JSON.stringify(result.response));
 
-        builder.Prompts.text(session, "Another one?");
+        var userResponse = utility.extractAnswer(result.response);
+        console.log("Quiz #%d, user response '%s', correct answer is '%s'", session.dialogData.currentQuizId, userResponse, session.dialogData.currentQuizAnswer);
+
+        var correct = (userResponse == session.dialogData.currentQuizAnswer);
+        session.send((correct) ? "answer_correct" : "answer_wrong");
+
+        dbpool.getConnection(function(err, connection) {
+            if(err) throw err;
+
+            connection.query("INSERT INTO `quiz_answers` (`user_id`, `quiz_id`, `provided_answer`, `answered_on`, `is_correct`) VALUES(?, ?, ?, NOW(), ?)", [
+                session.identity,
+                session.dialogData.currentQuizId,
+                userResponse,
+                correct
+            ], function(err, result, fields) {
+                connection.release();
+                if(err) throw err;
+
+                session.conversationData.currentQuizId = null;
+                session.conversationData.currentQuizAnswer = null;
+                session.save();
+
+                builder.Prompts.text(session, "another_quiz");
+            });
+        });
     },
     function(session, result) {
         var affirmations = session.localizer.getEntry(session.preferredLocale(), "affirmation");
-
-        var normalizedResponse = result.response.toString().normalizeResponse();
-        console.log("Response %s, normalized %s", result.response, normalizedResponse);
+        var normalizedResponse = utility.normalizeResponse(result.response);
+        console.log("Looking for '%s' in %s", normalizedResponse, JSON.stringify(affirmations));
 
         if(affirmations.includes(normalizedResponse)) {
             session.replaceDialog("/quiz");
         }
         else {
-            session.endDialog("Ok then.");
+            session.endDialog("done");
         }
     }
 ]);
