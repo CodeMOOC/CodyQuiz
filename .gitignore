@@ -1,4 +1,8 @@
 node_modules/*
 config.js
-
-\.vscode/
+**/.vscode/*
+**/.vs/*
+appsettings.development.json
+**/obj/*
+**/bin/*
+*.user
