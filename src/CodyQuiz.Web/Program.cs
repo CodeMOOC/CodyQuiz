@@ -22,6 +22,13 @@ namespace CodyQuiz.Web {
 
             if (args.Length >= 1 && string.Compare(args[0], "pull", true) == 0) {
                 Console.WriteLine("Launching in pull mode...");
+                var service = new TelegramService(conf);
+                var updates = service.GetUpdates();
+                foreach(var u in updates.Updates) {
+                    Console.WriteLine("#{0} #{1} {2} {3}", u.Id, u.Message.Id, u.Message.Date, u.Message.Text);
+                }
+
+                Console.Read();
             }
             else {
                 BuildWebHost(args).Run();

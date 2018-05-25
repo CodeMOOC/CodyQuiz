@@ -1,0 +1,20 @@
+﻿using RestSharp.Deserializers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CodyQuiz.Web.Model {
+
+    public class Message {
+
+        [DeserializeAs(Name = "message_id")]
+        public int Id { get; set; }
+
+        public DateTime Date { get; set; }
+
+        public string Text { get; set; }
+
+    }
+
+}
